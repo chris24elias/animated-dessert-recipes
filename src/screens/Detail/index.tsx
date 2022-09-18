@@ -8,7 +8,10 @@ import Animated, {
   FadeInUp,
   interpolate,
   Layout,
+  SensorType,
+  useAnimatedReaction,
   useAnimatedScrollHandler,
+  useAnimatedSensor,
   useAnimatedStyle,
   useSharedValue,
   withDelay,
@@ -32,6 +35,12 @@ export const diffClamp = (val: number, min: number, max: number) => {
   return val;
 };
 
+export const degreeToRad = (degree: number) => {
+  "worklet";
+
+  return degree * (Math.PI / 180);
+};
+
 const DetailScreen = ({ route }: PropsWithChildren<IDetailScreenProps>) => {
   const { item } = route.params;
   const { height, width } = useWindowDimensions();
@@ -41,21 +50,30 @@ const DetailScreen = ({ route }: PropsWithChildren<IDetailScreenProps>) => {
   const imageSize = 250;
 
   const scrollY = useSharedValue(0);
-  // const cardHeight = useSharedValue(rawcardHeight);
+
   const bgOpacity = useSharedValue(0);
+
+  const animatedSensor = useAnimatedSensor(SensorType.ROTATION, {
+    interval: 5,
+  });
+  // const roll = useSharedValue(0);
+  // const pitch = useSharedValue(0);
+
+  // useAnimatedReaction(
+  //   () => animatedSensor.sensor.value,
+  //   (s) => {
+  //     pitch.value = s.pitch;
+  //     roll.value = s.roll;
+  //   },
+  //   []
+  // );
+
   useEffect(() => {
     bgOpacity.value = withDelay(500, withTiming(1));
   }, []);
 
   const scrollHandler = useAnimatedScrollHandler((event) => {
     scrollY.value = event.contentOffset.y;
-    // cardHeight.value = interpolate(
-    //   scrollY.value,
-    //   [-100, 0, 280],
-    //   [200, rawcardHeight, height * 0.2],
-    //   Extrapolate.CLAMP
-    // );
-
     bgOpacity.value = interpolate(
       scrollY.value,
       [0, 200],
@@ -78,6 +96,7 @@ const DetailScreen = ({ route }: PropsWithChildren<IDetailScreenProps>) => {
       [0, -180]
       // Extrapolate.CLAMP
     );
+
     return {
       transform: [
         {
@@ -104,25 +123,40 @@ const DetailScreen = ({ route }: PropsWithChildren<IDetailScreenProps>) => {
   });
 
   const animatedBgImageStyle = useAnimatedStyle(() => {
+    const roll = animatedSensor.sensor.value.roll;
+    const pitch = animatedSensor.sensor.value.pitch;
+
+    const deg = 20;
+    const rotateX = interpolate(
+      pitch,
+      [-Math.PI, Math.PI],
+      [degreeToRad(deg), degreeToRad(-deg)],
+      Extrapolate.CLAMP
+    );
+
+    const rotateY = interpolate(
+      roll,
+      [-Math.PI, Math.PI],
+      [degreeToRad(deg), degreeToRad(-deg)],
+      Extrapolate.CLAMP
+    );
+
+    const qx = animatedSensor.sensor.value.qx;
+    const qy = animatedSensor.sensor.value.qz;
+    const z = 100;
+    const translateX = withTiming(qx * z, { duration: 50 });
+    const translateY = withTiming(qy * z, { duration: 50 });
+
     return {
       opacity: bgOpacity.value,
       transform: [
-        // {
-        //   scale: interpolate(
-        //     scrollY.value,
-        //     [-100, 0],
-        //     [1.1, 1],
-        //     Extrapolate.CLAMP
-        //   ),
-        // },
-        // {
-        //   translateY: interpolate(
-        //     scrollY.value,
-        //     [-100, 0, 100],
-        //     [45, 0, -85],
-        //     Extrapolate.CLAMP
-        //   ),
-        // },
+        { perspective: 300 },
+        { rotateY: `${rotateY}rad` },
+        { rotateX: `${rotateX}rad` },
+        { scale: 1.1 },
+
+        // { translateX },
+        // { translateY },
       ],
     };
   });
@@ -168,7 +202,7 @@ const DetailScreen = ({ route }: PropsWithChildren<IDetailScreenProps>) => {
             height: imageSize,
             width: imageSize,
             position: "absolute",
-            zIndex: 10,
+            zIndex: 100000,
             top: rawcardHeight / 2 - imageSize / 2 + insets.top / 2,
             alignSelf: "center",
           }}
@@ -181,20 +215,27 @@ const DetailScreen = ({ route }: PropsWithChildren<IDetailScreenProps>) => {
             ]}
           />
         </SharedElement>
-        <Animated.Image
+        <Animated.View
           style={[
             animatedBgImageStyle,
             {
+              height: "100%",
+              width: "100%",
               position: "absolute",
-              zIndex: 1,
+              zIndex: 10000,
+            },
+          ]}
+        >
+          <Animated.Image
+            style={{
               height: "100%",
               width: "100%",
               alignSelf: "center",
-            },
-          ]}
-          // resizeMode="cover"
-          source={item.bgImageName}
-        />
+            }}
+            // resizeMode="repeat"
+            source={item.bgImageName}
+          />
+        </Animated.View>
       </Animated.View>
 
       <Animated.ScrollView
