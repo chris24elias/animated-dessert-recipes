@@ -57,14 +57,16 @@ const RecipeCard = ({
   y: Animated.SharedValue<number>;
   item: any;
 }) => {
-  const { height } = useWindowDimensions();
+  const { height, width } = useWindowDimensions();
+  const CARD_WIDTH = width * 0.9;
+  const extraOffset = 50;
+  const isDisappearing = -CARD_HEIGHT;
+  const isTop = 0 - extraOffset;
+  const isBottom = height - CARD_HEIGHT - extraOffset;
+  const isAppearing = height;
 
   const animatedStyle = useAnimatedStyle(() => {
     const position = index * CARD_HEIGHT - y.value;
-    const isDisappearing = -CARD_HEIGHT;
-    const isTop = 0;
-    const isBottom = height - CARD_HEIGHT;
-    const isAppearing = height;
 
     const a =
       y.value +
@@ -83,9 +85,9 @@ const RecipeCard = ({
     );
 
     const translateY = a + b;
-    if (index === 1) {
-      console.log({ position, translateY, isAppearing, isDisappearing });
-    }
+    // if (index === 1) {
+    //   console.log({ position, translateY, isAppearing, isDisappearing });
+    // }
 
     const scale = interpolate(
       position,
@@ -100,9 +102,67 @@ const RecipeCard = ({
       [0.5, 1, 1, 0.5]
     );
 
+    const rotateX = interpolate(
+      position,
+      [isDisappearing, isTop, isBottom, isAppearing],
+      [90, 0, 0, -90],
+      Extrapolate.CLAMP
+    );
+
     return {
-      opacity,
-      transform: [{ translateY }, { scale }],
+      // opacity,
+      transform: [
+        { perspective: 1000 },
+        { translateX: CARD_WIDTH },
+        { rotateX: `${rotateX}deg` },
+        { translateX: -CARD_WIDTH },
+        // { translateY },
+        // { scale },
+      ],
+    };
+  });
+
+  const animatedImageStyle = useAnimatedStyle(() => {
+    const position = index * CARD_HEIGHT - y.value;
+
+    const scale = interpolate(
+      position,
+      [isDisappearing, isTop, isBottom, isAppearing],
+      [0.8, 1, 1, 0.8],
+      Extrapolate.CLAMP
+    );
+
+    const rotateY = interpolate(
+      position,
+      [isDisappearing, isTop, isBottom, isAppearing],
+      [45, 0, 0, 45],
+      Extrapolate.CLAMP
+    );
+
+    const rotate = interpolate(
+      position,
+      [isDisappearing, isTop, isBottom, isAppearing],
+      [45, 0, 0, -45],
+      Extrapolate.CLAMP
+    );
+
+    const translateX = interpolate(
+      position,
+      [isDisappearing, isTop, isBottom, isAppearing],
+      [25, 0, 0, 25],
+      Extrapolate.CLAMP
+    );
+
+    return {
+      transform: [
+        { perspective: 1000 },
+        { translateX: imageSize },
+        { rotateY: `${rotateY}deg` },
+        { translateX: -imageSize },
+        { translateX },
+        { rotate: `${rotate}deg` },
+        // { scale },
+      ],
     };
   });
 
@@ -112,7 +172,7 @@ const RecipeCard = ({
         animatedStyle,
         {
           height: CARD_HEIGHT_RAW,
-          width: "90%",
+          width: CARD_WIDTH,
           borderRadius: 18,
           shadowOffset: {
             height: 2,
@@ -141,7 +201,7 @@ const RecipeCard = ({
           <Text
             numberOfLines={3}
             style={{
-              fontSize: 9,
+              fontSize: 12,
               marginTop: 10,
             }}
           >
@@ -149,16 +209,19 @@ const RecipeCard = ({
           </Text>
         </View>
         <View style={{ flex: 1 }}>
-          <Image
+          <Animated.Image
             source={item.image}
-            style={{
-              height: imageSize,
-              width: imageSize,
-              position: "absolute",
-              zIndex: 100,
-              bottom: "-8%",
-              right: "-10%",
-            }}
+            style={[
+              animatedImageStyle,
+              {
+                height: imageSize,
+                width: imageSize,
+                position: "absolute",
+                zIndex: 100,
+                bottom: "-8%",
+                right: "-10%",
+              },
+            ]}
           />
         </View>
       </View>
