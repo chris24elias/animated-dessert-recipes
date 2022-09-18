@@ -1,5 +1,5 @@
 import { Box, Heading } from "native-base";
-import React, { PropsWithChildren } from "react";
+import React, { PropsWithChildren, useEffect } from "react";
 import { Image, Text, useWindowDimensions, View } from "react-native";
 import Animated, {
   Extrapolate,
@@ -11,6 +11,8 @@ import Animated, {
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
+  withDelay,
+  withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SharedElement } from "react-navigation-shared-element";
@@ -35,11 +37,16 @@ const DetailScreen = ({ route }: PropsWithChildren<IDetailScreenProps>) => {
   const { height, width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
 
-  const rawcardHeight = height * 0.35;
-  const imageSize = 200;
+  const rawcardHeight = height * 0.5;
+  const imageSize = 250;
 
   const scrollY = useSharedValue(0);
-  const cardHeight = useSharedValue(rawcardHeight);
+  // const cardHeight = useSharedValue(rawcardHeight);
+  const bgOpacity = useSharedValue(0);
+  useEffect(() => {
+    bgOpacity.value = withDelay(500, withTiming(1));
+  }, []);
+
   const scrollHandler = useAnimatedScrollHandler((event) => {
     scrollY.value = event.contentOffset.y;
     // cardHeight.value = interpolate(
@@ -48,11 +55,18 @@ const DetailScreen = ({ route }: PropsWithChildren<IDetailScreenProps>) => {
     //   [200, rawcardHeight, height * 0.2],
     //   Extrapolate.CLAMP
     // );
+
+    bgOpacity.value = interpolate(
+      scrollY.value,
+      [0, 200],
+      [1, 0],
+      Extrapolate.CLAMP
+    );
   });
 
   const animatedStyle = useAnimatedStyle(() => {
     return {
-      height: rawcardHeight - diffClamp(scrollY.value, -100, 100),
+      height: rawcardHeight - diffClamp(scrollY.value, -100, 200),
       zIndex: scrollY.value > 2 ? 2 : -2,
     };
   });
@@ -69,7 +83,7 @@ const DetailScreen = ({ route }: PropsWithChildren<IDetailScreenProps>) => {
         {
           scale: interpolate(
             scrollY.value,
-            [-100, 0, 100],
+            [-100, 0, 200],
             [1.4, 1, 0.6],
             Extrapolate.CLAMP
           ),
@@ -77,14 +91,38 @@ const DetailScreen = ({ route }: PropsWithChildren<IDetailScreenProps>) => {
         {
           translateY: interpolate(
             scrollY.value,
-            [-100, 0, 100],
-            [45, 0, -85],
+            [-100, 0, 200],
+            [45, 0, -170],
             Extrapolate.CLAMP
           ),
         },
         {
           rotate: `${rotate}deg`,
         },
+      ],
+    };
+  });
+
+  const animatedBgImageStyle = useAnimatedStyle(() => {
+    return {
+      opacity: bgOpacity.value,
+      transform: [
+        // {
+        //   scale: interpolate(
+        //     scrollY.value,
+        //     [-100, 0],
+        //     [1.1, 1],
+        //     Extrapolate.CLAMP
+        //   ),
+        // },
+        // {
+        //   translateY: interpolate(
+        //     scrollY.value,
+        //     [-100, 0, 100],
+        //     [45, 0, -85],
+        //     Extrapolate.CLAMP
+        //   ),
+        // },
       ],
     };
   });
@@ -130,6 +168,7 @@ const DetailScreen = ({ route }: PropsWithChildren<IDetailScreenProps>) => {
             height: imageSize,
             width: imageSize,
             position: "absolute",
+            zIndex: 10,
             top: rawcardHeight / 2 - imageSize / 2 + insets.top / 2,
             alignSelf: "center",
           }}
@@ -142,6 +181,20 @@ const DetailScreen = ({ route }: PropsWithChildren<IDetailScreenProps>) => {
             ]}
           />
         </SharedElement>
+        <Animated.Image
+          style={[
+            animatedBgImageStyle,
+            {
+              position: "absolute",
+              zIndex: 1,
+              height: "100%",
+              width: "100%",
+              alignSelf: "center",
+            },
+          ]}
+          // resizeMode="cover"
+          source={item.bgImageName}
+        />
       </Animated.View>
 
       <Animated.ScrollView
