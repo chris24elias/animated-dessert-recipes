@@ -7,7 +7,7 @@ export const AppColors = {
   black: "#0F1E31",
   blackLight: "#1B2C41",
   orangeDark: "#CE5A01",
-  yellow: "#EF7D",
+  yellow: "#FFEF7D",
   sugar: "#FBF5E9",
   honey: "#DA7C16",
   pinkLight: "#F9B7B6",
