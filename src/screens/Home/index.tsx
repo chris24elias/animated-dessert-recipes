@@ -287,7 +287,7 @@ const RecipeCard = ({
         >
           <Text
             style={{
-              fontSize: 15,
+              fontSize: 18,
               fontWeight: "600",
               color: textColor,
             }}
@@ -297,7 +297,7 @@ const RecipeCard = ({
           <Text
             numberOfLines={3}
             style={{
-              fontSize: 12,
+              fontSize: 14,
               marginTop: 10,
               color: textColor,
             }}

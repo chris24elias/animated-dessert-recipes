@@ -34,7 +34,6 @@ const Navigation = ({}) => {
             const { item } = route.params;
             return [
               `item.${item.id}.card`,
-              `item.${item.id}.photo`,
               {
                 id: `item.${item.id}.text`,
                 // resize: "none",
@@ -42,6 +41,7 @@ const Navigation = ({}) => {
                 animation: "fade",
                 // animation: "fade",
               },
+              `item.${item.id}.photo`,
             ];
           }}
         />
