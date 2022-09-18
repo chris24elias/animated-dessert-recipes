@@ -2,11 +2,14 @@ import { Box, Heading } from "native-base";
 import React, { PropsWithChildren } from "react";
 import { Image, Text, useWindowDimensions, View } from "react-native";
 import Animated, {
+  Extrapolate,
   FadeIn,
   FadeInDown,
   FadeInUp,
+  interpolate,
   Layout,
   useAnimatedScrollHandler,
+  useAnimatedStyle,
   useSharedValue,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -15,32 +18,96 @@ import FloatingBackButton from "../../components/FloatingBackButton";
 
 export type IDetailScreenProps = {};
 
+export const diffClamp = (val: number, min: number, max: number) => {
+  "worklet";
+
+  if (val >= max) {
+    return max;
+  }
+  if (val <= min) {
+    return min;
+  }
+  return val;
+};
+
 const DetailScreen = ({ route }: PropsWithChildren<IDetailScreenProps>) => {
   const { item } = route.params;
   const { height, width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
 
-  const cardHeight = height * 0.5;
+  const rawcardHeight = height * 0.35;
+  const imageSize = 200;
 
-  const y = useSharedValue(0);
-
+  const scrollY = useSharedValue(0);
+  const cardHeight = useSharedValue(rawcardHeight);
   const scrollHandler = useAnimatedScrollHandler((event) => {
-    y.value = event.contentOffset.y;
+    scrollY.value = event.contentOffset.y;
+    // cardHeight.value = interpolate(
+    //   scrollY.value,
+    //   [-100, 0, 280],
+    //   [200, rawcardHeight, height * 0.2],
+    //   Extrapolate.CLAMP
+    // );
+  });
+
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      height: rawcardHeight - diffClamp(scrollY.value, -100, 100),
+      zIndex: scrollY.value > 2 ? 2 : -2,
+    };
+  });
+
+  const animatedImageStyle = useAnimatedStyle(() => {
+    const rotate = interpolate(
+      scrollY.value,
+      [0, 280],
+      [0, -180]
+      // Extrapolate.CLAMP
+    );
+    return {
+      transform: [
+        {
+          scale: interpolate(
+            scrollY.value,
+            [-100, 0, 100],
+            [1.4, 1, 0.6],
+            Extrapolate.CLAMP
+          ),
+        },
+        {
+          translateY: interpolate(
+            scrollY.value,
+            [-100, 0, 100],
+            [45, 0, -85],
+            Extrapolate.CLAMP
+          ),
+        },
+        {
+          rotate: `${rotate}deg`,
+        },
+      ],
+    };
   });
 
   return (
     <View style={{ flex: 1 }}>
       <FloatingBackButton />
-      <Animated.ScrollView
-        scrollEventThrottle={16}
-        // bounces={false}
-        onScroll={scrollHandler}
+      <Animated.View
+        style={[
+          {
+            position: "absolute",
+            // height: cardHeight,
+            width: "100%",
+            overflow: "hidden",
+          },
+          animatedStyle,
+        ]}
       >
         <SharedElement id={`item.${item.id}.card`}>
           <View
             style={{
               backgroundColor: item.bgColor,
-              height: cardHeight,
+              height: "100%",
               width: "100%",
               justifyContent: "center",
               alignItems: "center",
@@ -60,18 +127,29 @@ const DetailScreen = ({ route }: PropsWithChildren<IDetailScreenProps>) => {
         <SharedElement
           id={`item.${item.id}.photo`}
           style={{
-            height: 250,
-            width: 250,
+            height: imageSize,
+            width: imageSize,
             position: "absolute",
-            top: cardHeight / 2 - 250 / 2 + insets.top / 2,
+            top: rawcardHeight / 2 - imageSize / 2 + insets.top / 2,
             alignSelf: "center",
           }}
         >
-          <Image
+          <Animated.Image
             source={item.image}
-            style={{ height: 250, width: 250, alignSelf: "center" }}
+            style={[
+              animatedImageStyle,
+              { height: imageSize, width: imageSize, alignSelf: "center" },
+            ]}
           />
         </SharedElement>
+      </Animated.View>
+
+      <Animated.ScrollView
+        scrollEventThrottle={16}
+        // bounces={false}
+        onScroll={scrollHandler}
+        contentContainerStyle={{ paddingTop: rawcardHeight }}
+      >
         <SharedElement id={`item.${item.id}.text`}>
           <View
             style={{
