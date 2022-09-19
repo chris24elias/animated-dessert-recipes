@@ -20,6 +20,7 @@ import Animated, {
 import { RECIPES } from "../../utils";
 import { SharedElement } from "react-navigation-shared-element";
 import { useContrastText } from "native-base";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export type IHomeProps = {};
 
@@ -33,6 +34,7 @@ const useLazyRef = <T extends object>(initializer: () => T) => {
 };
 
 const Home = ({ navigation }: PropsWithChildren<IHomeProps>) => {
+  const insets = useSafeAreaInsets();
   const y = useSharedValue(0);
 
   const direction = useSharedValue(0);
@@ -79,6 +81,7 @@ const Home = ({ navigation }: PropsWithChildren<IHomeProps>) => {
               y,
               item,
               direction,
+              paddingTop: insets.top,
               onPress: () =>
                 navigation.push("Detail", {
                   item,
@@ -87,11 +90,9 @@ const Home = ({ navigation }: PropsWithChildren<IHomeProps>) => {
           />
         )}
         keyExtractor={(item) => `${item.id}`}
-        contentContainerStyle={
-          {
-            // paddingTop: 15,
-          }
-        }
+        contentContainerStyle={{
+          paddingTop: insets.top,
+        }}
       />
     </View>
   );
@@ -136,6 +137,7 @@ const RecipeCard = ({
   item,
   onPress,
   direction,
+  paddingTop,
 }: {
   index: number;
   y: Animated.SharedValue<number>;
@@ -147,10 +149,10 @@ const RecipeCard = ({
   const textColor = getContrast(item.bgColor);
   const CARD_WIDTH = width * 0.9;
   // const extraOffset = 50;
-  const isDisappearing = -CARD_HEIGHT;
-  const isTop = 0;
-  const isBottom = height - CARD_HEIGHT;
-  const isAppearing = height;
+  const isDisappearing = -CARD_HEIGHT - paddingTop;
+  const isTop = 0 - paddingTop;
+  const isBottom = height - CARD_HEIGHT - paddingTop;
+  const isAppearing = height - paddingTop;
 
   const rotateX = useSharedValue(0);
   const imageRotateY = useSharedValue(0);
@@ -311,6 +313,13 @@ const RecipeCard = ({
             // marginBottom: 30,
             alignSelf: "center",
             marginVertical: MARGIN,
+            // shadowColor: "#000",
+            // shadowOffset: {
+            //   width: 0,
+            //   height: 3,
+            // },
+            // shadowOpacity: 0.29,
+            // shadowRadius: 4.65,
           }}
         >
           <View style={{ flexDirection: "row", flex: 1 }}>
@@ -330,6 +339,13 @@ const RecipeCard = ({
           zIndex: 100,
           bottom: 0,
           right: 0,
+          // shadowColor: "#000",
+          // shadowOffset: {
+          //   width: 0,
+          //   height: 3,
+          // },
+          // shadowOpacity: 0.29,
+          // shadowRadius: 4.65,
         }}
       >
         <Animated.Image
@@ -346,17 +362,19 @@ const RecipeCard = ({
       <SharedElement id={`item.${item.id}.text`}>
         <View
           style={{
-            height: undefined, // CARD_HEIGHT * 0.3,
-            width: CARD_WIDTH * 0.55,
+            height: CARD_HEIGHT * 0.5,
+            width: CARD_WIDTH * 0.6,
             position: "absolute",
             left: (width - CARD_WIDTH) / 2 + 10,
             // top: CARD_HEIGHT / 2 - 40,
-            bottom: 25,
+            zIndex: 5,
+            // bottom: (CARD_HEIGHT - CARD_HEIGHT * 0.3) / 2,
+            bottom: CARD_HEIGHT - CARD_HEIGHT * 0.5 - MARGIN * 2 - 30,
           }}
         >
           <Text
             style={{
-              fontSize: 18,
+              fontSize: 24,
               fontWeight: "600",
               color: textColor,
             }}
@@ -364,11 +382,12 @@ const RecipeCard = ({
             {item.title}
           </Text>
           <Text
-            numberOfLines={3}
+            numberOfLines={4}
             style={{
-              fontSize: 14,
+              fontSize: 15,
               marginTop: 10,
               color: textColor,
+              fontWeight: "300",
             }}
           >
             {item.description}

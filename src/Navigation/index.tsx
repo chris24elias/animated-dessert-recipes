@@ -33,7 +33,10 @@ const Navigation = ({}) => {
           sharedElements={(route, otherRoute, showing) => {
             const { item } = route.params;
             return [
-              `item.${item.id}.card`,
+              {
+                id: `item.${item.id}.card`,
+                // animation: "fade",
+              },
               {
                 id: `item.${item.id}.text`,
                 // resize: "none",
@@ -41,7 +44,10 @@ const Navigation = ({}) => {
                 animation: "fade",
                 // animation: "fade",
               },
-              `item.${item.id}.photo`,
+              {
+                id: `item.${item.id}.photo`,
+                // animation: "fade",
+              },
             ];
           }}
         />

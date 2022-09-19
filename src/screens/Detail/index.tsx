@@ -153,7 +153,7 @@ const DetailScreen = ({ route }: PropsWithChildren<IDetailScreenProps>) => {
         { perspective: 300 },
         { rotateY: `${rotateY}rad` },
         { rotateX: `${rotateX}rad` },
-        { scale: 1.1 },
+        { scale: 1 },
 
         // { translateX },
         // { translateY },
@@ -170,7 +170,18 @@ const DetailScreen = ({ route }: PropsWithChildren<IDetailScreenProps>) => {
             position: "absolute",
             // height: cardHeight,
             width: "100%",
-            overflow: "hidden",
+            // overflow: "hidden",
+            // zIndex: 10,
+            // shadowColor: "#000",
+            // shadowOffset: {
+            //   width: 0,
+            //   height: 3,
+            // },
+            // shadowOpacity: 0.29,
+            // shadowRadius: 4.65,
+            // backgroundColor: item.bgColor,
+            borderBottomLeftRadius: 18,
+            borderBottomRightRadius: 18,
           },
           animatedStyle,
         ]}
@@ -186,13 +197,13 @@ const DetailScreen = ({ route }: PropsWithChildren<IDetailScreenProps>) => {
               paddingTop: insets.top,
               borderBottomLeftRadius: 18,
               borderBottomRightRadius: 18,
+              // shadowColor: "#000",
               // shadowOffset: {
-              //   height: 2,
               //   width: 0,
+              //   height: 3,
               // },
-              // shadowOpacity: 0.2,
-              // shadowRadius: 4,
-              // shadowColor: "#000000",
+              // shadowOpacity: 0.29,
+              // shadowRadius: 4.65,
             }}
           ></View>
         </SharedElement>
@@ -205,13 +216,24 @@ const DetailScreen = ({ route }: PropsWithChildren<IDetailScreenProps>) => {
             zIndex: 100000,
             top: rawcardHeight / 2 - imageSize / 2 + insets.top / 2,
             alignSelf: "center",
+            // shadowColor: "#000",
+            // shadowOffset: {
+            //   width: 0,
+            //   height: 3,
+            // },
+            // shadowOpacity: 0.29,
+            // shadowRadius: 4.65,
           }}
         >
           <Animated.Image
             source={item.image}
             style={[
               animatedImageStyle,
-              { height: imageSize, width: imageSize, alignSelf: "center" },
+              {
+                height: imageSize,
+                width: imageSize,
+                alignSelf: "center",
+              },
             ]}
           />
         </SharedElement>
