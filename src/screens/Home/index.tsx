@@ -10,9 +10,12 @@ import {
 import Animated, {
   Extrapolate,
   interpolate,
+  useAnimatedReaction,
   useAnimatedScrollHandler,
   useAnimatedStyle,
+  useDerivedValue,
   useSharedValue,
+  withSpring,
 } from "react-native-reanimated";
 import { RECIPES } from "../../utils";
 import { SharedElement } from "react-navigation-shared-element";
@@ -32,8 +35,35 @@ const useLazyRef = <T extends object>(initializer: () => T) => {
 const Home = ({ navigation }: PropsWithChildren<IHomeProps>) => {
   const y = useSharedValue(0);
 
-  const scrollHandler = useAnimatedScrollHandler((event) => {
-    y.value = event.contentOffset.y;
+  const direction = useSharedValue(0);
+  const velocity = useSharedValue(0);
+  const scrollHandler = useAnimatedScrollHandler<{ y?: number }>({
+    onEndDrag: () => {
+      direction.value = 0;
+    },
+    onScroll: (event, ctx) => {
+      const dy = event.contentOffset.y - (ctx?.y ?? 0);
+      direction.value = Math.sign(dy);
+
+      //// velocity
+      const now = new Date().getTime();
+      const dt = now - ctx.time;
+      const dyy = event.contentOffset.y - ctx.y;
+      velocity.value = dyy / dt;
+      ctx.time = now;
+
+      ///
+      ctx.y = event.contentOffset.y;
+      y.value = event.contentOffset.y;
+
+      const x = 5;
+      direction.value = interpolate(
+        velocity.value,
+        [-x, -0.1, 0, 0.1, x],
+        [-1, 0, 0, 0, 1],
+        Extrapolate.CLAMP
+      );
+    },
   });
   return (
     <View style={{ flex: 1, backgroundColor: "white" }}>
@@ -48,6 +78,7 @@ const Home = ({ navigation }: PropsWithChildren<IHomeProps>) => {
               index,
               y,
               item,
+              direction,
               onPress: () =>
                 navigation.push("Detail", {
                   item,
@@ -104,6 +135,7 @@ const RecipeCard = ({
   y,
   item,
   onPress,
+  direction,
 }: {
   index: number;
   y: Animated.SharedValue<number>;
@@ -113,14 +145,52 @@ const RecipeCard = ({
   const { height, width } = useWindowDimensions();
 
   const textColor = getContrast(item.bgColor);
-  console.log("TEXT COLOR", item.bgColor, textColor);
   const CARD_WIDTH = width * 0.9;
-  const extraOffset = 50;
+  // const extraOffset = 50;
   const isDisappearing = -CARD_HEIGHT;
-  const isTop = 0 - extraOffset;
-  const isBottom = height - CARD_HEIGHT - extraOffset;
+  const isTop = 0;
+  const isBottom = height - CARD_HEIGHT;
   const isAppearing = height;
 
+  const rotateX = useSharedValue(0);
+  const imageRotateY = useSharedValue(0);
+  const imageTranslateX = useSharedValue(0);
+  const perspective = useSharedValue(500);
+
+  useAnimatedReaction(
+    () => {
+      const position = index * CARD_HEIGHT - y.value;
+
+      const p = interpolate(
+        position,
+        [isDisappearing, isTop, isBottom, isAppearing],
+        [-1, 0, 0, 1],
+        Extrapolate.CLAMP
+      );
+
+      return p;
+    },
+    (result, previous) => {
+      if (Math.abs(result) >= 0.7 && Math.abs(result) <= 1) {
+        rotateX.value = withSpring(0);
+        imageRotateY.value = withSpring(0);
+        imageTranslateX.value = withSpring(0);
+      }
+
+      if (result === -1) {
+        rotateX.value = 70;
+        imageRotateY.value = 45;
+        imageTranslateX.value = 100;
+      }
+
+      if (result === 1) {
+        rotateX.value = -70;
+        imageRotateY.value = 45;
+        imageTranslateX.value = 100;
+      }
+    }
+  ),
+    [y];
   const animatedStyle = useAnimatedStyle(() => {
     const position = index * CARD_HEIGHT - y.value;
 
@@ -141,9 +211,6 @@ const RecipeCard = ({
     );
 
     const translateY = a + b;
-    // if (index === 1) {
-    //   console.log({ position, translateY, isAppearing, isDisappearing });
-    // }
 
     const scale = interpolate(
       position,
@@ -158,20 +225,21 @@ const RecipeCard = ({
       [0.5, 1, 1, 0.5]
     );
 
-    const rotateX = interpolate(
-      position,
-      [isDisappearing, isTop, isBottom, isAppearing],
-      [90, 0, 0, -90],
-      Extrapolate.CLAMP
-    );
+    // const rotateX = interpolate(
+    //   position,
+    //   [isDisappearing, isTop, isBottom, isAppearing],
+    //   [90, 0, 0, -90],
+    //   Extrapolate.CLAMP
+    // );
 
     return {
       // opacity,
       transform: [
-        { perspective: 1000 },
-        { translateX: CARD_WIDTH },
-        { rotateX: `${rotateX}deg` },
-        { translateX: -CARD_WIDTH },
+        { perspective: perspective.value },
+        // { translateX: CARD_WIDTH },
+        // { rotateX: `${rotateX}deg` },
+        // { translateX: -CARD_WIDTH },
+        { rotateX: `${rotateX.value}deg` },
         // { translateY },
         // { scale },
       ],
@@ -212,10 +280,11 @@ const RecipeCard = ({
     return {
       transform: [
         { perspective: 1000 },
-        { translateX: imageSize },
-        { rotateY: `${rotateY}deg` },
-        { translateX: -imageSize },
-        { translateX },
+        // { translateX: imageSize },
+        { rotateY: `${imageRotateY.value}deg` },
+        { translateX: imageTranslateX.value },
+        // { translateX: -imageSize },
+        // { translateX },
         { rotate: `${rotate}deg` },
         // { scale },
       ],
