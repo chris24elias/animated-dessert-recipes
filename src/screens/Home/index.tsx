@@ -1,7 +1,6 @@
 import React, { PropsWithChildren, useRef } from "react";
 import {
   FlatList,
-  Image,
   Pressable,
   Text,
   useWindowDimensions,
@@ -13,77 +12,61 @@ import Animated, {
   useAnimatedReaction,
   useAnimatedScrollHandler,
   useAnimatedStyle,
-  useDerivedValue,
   useSharedValue,
   withDelay,
   withSpring,
   WithSpringConfig,
 } from "react-native-reanimated";
-import { RECIPES } from "../../utils";
+import { RECIPES } from "../../utils/data";
 import { SharedElement } from "react-navigation-shared-element";
-import { useContrastText } from "native-base";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { getContrast, getTranslateZ } from "../../utils";
 
-export type IHomeProps = {};
+export type IHomeProps = {
+  navigation: any;
+};
 
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
-const useLazyRef = <T extends object>(initializer: () => T) => {
-  const ref = useRef<T>();
-  if (ref.current === undefined) {
-    ref.current = initializer();
-  }
-  return ref.current;
-};
-
-export const transformOrigin = (
-  { x, y }: Vector,
-  transformations: RNTransform
-): RNTransform => {
-  "worklet";
-  return ([{ translateX: x }, { translateY: y }] as RNTransform)
-    .concat(transformations)
-    .concat([{ translateX: -x }, { translateY: -y }]);
-};
-
-const getTranslateZ = (perspective, z) => {
-  "worklet";
-  return perspective / (perspective - z);
-};
 
 const Home = ({ navigation }: PropsWithChildren<IHomeProps>) => {
   const insets = useSafeAreaInsets();
   const y = useSharedValue(0);
 
   const direction = useSharedValue(0);
-  const velocity = useSharedValue(0);
-  const scrollHandler = useAnimatedScrollHandler<{ y?: number }>({
-    onEndDrag: () => {
-      direction.value = 0;
-    },
-    onScroll: (event, ctx) => {
-      const dy = event.contentOffset.y - (ctx?.y ?? 0);
-      direction.value = Math.sign(dy);
+  // const velocity = useSharedValue(0);
+  // const scrollHandler = useAnimatedScrollHandler<{ y?: number }>({
+  //   onEndDrag: () => {
+  //     direction.value = 0;
+  //   },
+  //   onScroll: (event, ctx) => {
+  //     const dy = event.contentOffset.y - (ctx?.y ?? 0);
+  //     direction.value = Math.sign(dy);
 
-      //// velocity
-      const now = new Date().getTime();
-      const dt = now - ctx.time;
-      const dyy = event.contentOffset.y - ctx.y;
-      velocity.value = dyy / dt;
-      ctx.time = now;
+  //     //// velocity
+  //     const now = new Date().getTime();
+  //     const dt = now - ctx.time;
+  //     const dyy = event.contentOffset.y - ctx.y;
+  //     velocity.value = dyy / dt;
+  //     ctx.time = now;
 
-      ///
-      ctx.y = event.contentOffset.y;
-      y.value = event.contentOffset.y;
+  //     ///
+  //     ctx.y = event.contentOffset.y;
+  //     y.value = event.contentOffset.y;
 
-      const x = 5;
-      direction.value = interpolate(
-        velocity.value,
-        [-x, -0.1, 0, 0.1, x],
-        [-1, 0, 0, 0, 1],
-        Extrapolate.CLAMP
-      );
-    },
+  //     const x = 5;
+  //     direction.value = interpolate(
+  //       velocity.value,
+  //       [-x, -0.1, 0, 0.1, x],
+  //       [-1, 0, 0, 0, 1],
+  //       Extrapolate.CLAMP
+  //     );
+  //   },
+  // });
+
+  const scrollHandler = useAnimatedScrollHandler((event) => {
+    y.value = event.contentOffset.y;
   });
+
   return (
     <View style={{ flex: 1, backgroundColor: "white" }}>
       <AnimatedFlatList
@@ -120,34 +103,6 @@ const CARD_HEIGHT_RAW = 200;
 const MARGIN = 15;
 const CARD_HEIGHT = CARD_HEIGHT_RAW + MARGIN * 2;
 
-var getContrast = function (hexcolor) {
-  // If a leading # is provided, remove it
-  if (hexcolor.slice(0, 1) === "#") {
-    hexcolor = hexcolor.slice(1);
-  }
-
-  // If a three-character hexcode, make six-character
-  if (hexcolor.length === 3) {
-    hexcolor = hexcolor
-      .split("")
-      .map(function (hex) {
-        return hex + hex;
-      })
-      .join("");
-  }
-
-  // Convert to RGB value
-  var r = parseInt(hexcolor.substr(0, 2), 16);
-  var g = parseInt(hexcolor.substr(2, 2), 16);
-  var b = parseInt(hexcolor.substr(4, 2), 16);
-
-  // Get YIQ ratio
-  var yiq = (r * 299 + g * 587 + b * 114) / 1000;
-
-  // Check contrast
-  return yiq >= 128 ? "black" : "white";
-};
-
 const RecipeCard = ({
   index,
   y,
@@ -160,6 +115,8 @@ const RecipeCard = ({
   y: Animated.SharedValue<number>;
   item: any;
   onPress: any;
+  direction: Animated.SharedValue<number>;
+  paddingTop: number;
 }) => {
   const { height, width } = useWindowDimensions();
 
@@ -189,7 +146,7 @@ const RecipeCard = ({
 
       return p;
     },
-    (result, previous) => {
+    (result) => {
       const config: WithSpringConfig = {
         damping: 15,
         mass: 1.2,
@@ -220,45 +177,13 @@ const RecipeCard = ({
   ),
     [y];
   const animatedStyle = useAnimatedStyle(() => {
-    const position = index * CARD_HEIGHT - y.value;
-
-    // const a =
-    //   y.value +
-    //   interpolate(
-    //     y.value,
-    //     [0, 0.00001 + index * CARD_HEIGHT],
-    //     [0, -index * CARD_HEIGHT],
-    //     Extrapolate.CLAMP
-    //   );
-
-    // const b = interpolate(
-    //   position,
-    //   [isBottom, isAppearing],
-    //   [0, -CARD_HEIGHT / 4],
-    //   Extrapolate.CLAMP
-    // );
-
-    // const translateY = a + b;
-
-    // const scale = interpolate(
-    //   position,
-    //   [isDisappearing, isTop, isBottom, isAppearing],
-    //   [0.5, 1, 1, 0.5],
-    //   Extrapolate.CLAMP
-    // );
-
-    // export const translateZ = (
-    //   perspective: Animated.Adaptable<number>,
-    //   z: Animated.Adaptable<number>
-    // ) => ({ scale: divide(perspective, sub(perspective, z)) });
-
     const perspective = CARD_HEIGHT;
 
-    const offset = interpolate(
-      direction.value,
-      [-1, 0, 1],
-      [CARD_HEIGHT / 2, 0, -CARD_HEIGHT / 2]
-    );
+    // const offset = interpolate(
+    //   direction.value,
+    //   [-1, 0, 1],
+    //   [CARD_HEIGHT / 2, 0, -CARD_HEIGHT / 2]
+    // );
 
     return {
       transform: [
@@ -274,21 +199,21 @@ const RecipeCard = ({
   });
 
   const animatedImageStyle = useAnimatedStyle(() => {
-    const position = index * CARD_HEIGHT - y.value;
+    // const position = index * CARD_HEIGHT - y.value;
 
-    const rotate = interpolate(
-      position,
-      [isDisappearing, isTop, isBottom, isAppearing],
-      [45, 0, 0, -45],
-      Extrapolate.CLAMP
-    );
+    // const rotate = interpolate(
+    //   position,
+    //   [isDisappearing, isTop, isBottom, isAppearing],
+    //   [45, 0, 0, -45],
+    //   Extrapolate.CLAMP
+    // );
 
     return {
       transform: [
         { perspective: imageSize },
         { rotateY: `${imageRotateY.value}deg` },
         { translateX: imageTranslateX.value },
-        { rotate: `${rotate}deg` },
+        // { rotate: `${rotate}deg` },
       ],
     };
   });
@@ -302,24 +227,11 @@ const RecipeCard = ({
             height: CARD_HEIGHT_RAW,
             width: CARD_WIDTH,
             borderRadius: 18,
-            // shadowOffset: {
-            //   height: 2,
-            //   width: 0,
-            // },
-            // shadowOpacity: 0.2,
-            // shadowRadius: 4,
-            // shadowColor: "#000000",
+
             backgroundColor: item.bgColor,
-            // marginBottom: 30,
+
             alignSelf: "center",
             marginVertical: MARGIN,
-            // shadowColor: "#000",
-            // shadowOffset: {
-            //   width: 0,
-            //   height: 3,
-            // },
-            // shadowOpacity: 0.29,
-            // shadowRadius: 4.65,
           }}
         >
           <View style={{ flexDirection: "row", flex: 1 }}>
@@ -339,13 +251,6 @@ const RecipeCard = ({
           zIndex: 100,
           bottom: 0,
           right: 0,
-          // shadowColor: "#000",
-          // shadowOffset: {
-          //   width: 0,
-          //   height: 3,
-          // },
-          // shadowOpacity: 0.29,
-          // shadowRadius: 4.65,
         }}
       >
         <Animated.Image
@@ -366,9 +271,7 @@ const RecipeCard = ({
             width: CARD_WIDTH * 0.6,
             position: "absolute",
             left: (width - CARD_WIDTH) / 2 + 10,
-            // top: CARD_HEIGHT / 2 - 40,
             zIndex: 5,
-            // bottom: (CARD_HEIGHT - CARD_HEIGHT * 0.3) / 2,
             bottom: CARD_HEIGHT - CARD_HEIGHT * 0.5 - MARGIN * 2 - 30,
           }}
         >

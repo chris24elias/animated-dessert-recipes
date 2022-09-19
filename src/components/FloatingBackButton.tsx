@@ -1,7 +1,6 @@
 import React, { useEffect } from "react";
-import { StyleSheet } from "react-native";
-import { MaterialIcons, Feather } from "@expo/vector-icons";
-import { Box, Icon, IconButton } from "native-base";
+import { Feather } from "@expo/vector-icons";
+import { Icon, IconButton } from "native-base";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
@@ -57,5 +56,3 @@ const FloatingBackButton: React.FC = () => {
 };
 
 export default FloatingBackButton;
-
-const styles = StyleSheet.create({});

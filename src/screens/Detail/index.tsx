@@ -3,13 +3,9 @@ import React, { PropsWithChildren, useEffect } from "react";
 import { Image, Text, useWindowDimensions, View } from "react-native";
 import Animated, {
   Extrapolate,
-  FadeIn,
   FadeInDown,
-  FadeInUp,
   interpolate,
-  Layout,
   SensorType,
-  useAnimatedReaction,
   useAnimatedScrollHandler,
   useAnimatedSensor,
   useAnimatedStyle,
@@ -20,26 +16,9 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SharedElement } from "react-navigation-shared-element";
 import FloatingBackButton from "../../components/FloatingBackButton";
+import { degreeToRad, diffClamp } from "../../utils";
 
 export type IDetailScreenProps = {};
-
-export const diffClamp = (val: number, min: number, max: number) => {
-  "worklet";
-
-  if (val >= max) {
-    return max;
-  }
-  if (val <= min) {
-    return min;
-  }
-  return val;
-};
-
-export const degreeToRad = (degree: number) => {
-  "worklet";
-
-  return degree * (Math.PI / 180);
-};
 
 const DetailScreen = ({ route }: PropsWithChildren<IDetailScreenProps>) => {
   const { item } = route.params;
@@ -56,17 +35,6 @@ const DetailScreen = ({ route }: PropsWithChildren<IDetailScreenProps>) => {
   const animatedSensor = useAnimatedSensor(SensorType.ROTATION, {
     interval: 5,
   });
-  // const roll = useSharedValue(0);
-  // const pitch = useSharedValue(0);
-
-  // useAnimatedReaction(
-  //   () => animatedSensor.sensor.value,
-  //   (s) => {
-  //     pitch.value = s.pitch;
-  //     roll.value = s.roll;
-  //   },
-  //   []
-  // );
 
   useEffect(() => {
     bgOpacity.value = withDelay(500, withTiming(1));
@@ -141,11 +109,10 @@ const DetailScreen = ({ route }: PropsWithChildren<IDetailScreenProps>) => {
       Extrapolate.CLAMP
     );
 
-    const qx = animatedSensor.sensor.value.qx;
-    const qy = animatedSensor.sensor.value.qz;
-    const z = 100;
-    const translateX = withTiming(qx * z, { duration: 50 });
-    const translateY = withTiming(qy * z, { duration: 50 });
+    // const qx = animatedSensor.sensor.value.qx;
+    // const qy = animatedSensor.sensor.value.qz;
+    // const translateX = withTiming(qx * 100, { duration: 50 });
+    // const translateY = withTiming(qy * 100, { duration: 50 });
 
     return {
       opacity: bgOpacity.value,
@@ -168,18 +135,7 @@ const DetailScreen = ({ route }: PropsWithChildren<IDetailScreenProps>) => {
         style={[
           {
             position: "absolute",
-            // height: cardHeight,
             width: "100%",
-            // overflow: "hidden",
-            // zIndex: 10,
-            // shadowColor: "#000",
-            // shadowOffset: {
-            //   width: 0,
-            //   height: 3,
-            // },
-            // shadowOpacity: 0.29,
-            // shadowRadius: 4.65,
-            // backgroundColor: item.bgColor,
             borderBottomLeftRadius: 18,
             borderBottomRightRadius: 18,
           },
@@ -197,15 +153,8 @@ const DetailScreen = ({ route }: PropsWithChildren<IDetailScreenProps>) => {
               paddingTop: insets.top,
               borderBottomLeftRadius: 18,
               borderBottomRightRadius: 18,
-              // shadowColor: "#000",
-              // shadowOffset: {
-              //   width: 0,
-              //   height: 3,
-              // },
-              // shadowOpacity: 0.29,
-              // shadowRadius: 4.65,
             }}
-          ></View>
+          />
         </SharedElement>
         <SharedElement
           id={`item.${item.id}.photo`}
@@ -216,13 +165,6 @@ const DetailScreen = ({ route }: PropsWithChildren<IDetailScreenProps>) => {
             zIndex: 100000,
             top: rawcardHeight / 2 - imageSize / 2 + insets.top / 2,
             alignSelf: "center",
-            // shadowColor: "#000",
-            // shadowOffset: {
-            //   width: 0,
-            //   height: 3,
-            // },
-            // shadowOpacity: 0.29,
-            // shadowRadius: 4.65,
           }}
         >
           <Animated.Image
@@ -254,7 +196,6 @@ const DetailScreen = ({ route }: PropsWithChildren<IDetailScreenProps>) => {
               width: "100%",
               alignSelf: "center",
             }}
-            // resizeMode="repeat"
             source={item.bgImageName}
           />
         </Animated.View>
@@ -298,13 +239,13 @@ const DetailScreen = ({ route }: PropsWithChildren<IDetailScreenProps>) => {
           </Heading>
 
           <View style={{ marginTop: 15, paddingLeft: 10 }}>
-            {item.ingredients.map((_, i) => {
+            {item.ingredients.map((ingredient, i) => {
               return (
                 <Animated.View
+                  key={String(i)}
                   entering={FadeInDown.delay(150 + i * 150)}
                   style={{
                     flexDirection: "row",
-                    // justifyContent: "center",
                     alignItems: "center",
                     marginBottom: 15,
                     borderWidth: 2,
@@ -335,7 +276,7 @@ const DetailScreen = ({ route }: PropsWithChildren<IDetailScreenProps>) => {
                       }}
                     />
                   </Box>
-                  <Text style={{ marginLeft: 15 }}>{_}</Text>
+                  <Text style={{ marginLeft: 15 }}>{ingredient}</Text>
                 </Animated.View>
               );
             })}
@@ -345,20 +286,18 @@ const DetailScreen = ({ route }: PropsWithChildren<IDetailScreenProps>) => {
           </Heading>
 
           <View style={{ marginTop: 15, paddingLeft: 10 }}>
-            {item.instructions.map((_, i) => {
+            {item.instructions.map((instruction, i) => {
               return (
                 <Animated.View
+                  key={String(i)}
                   entering={FadeInDown.delay(150 + i * 150)}
                   style={{
-                    // justifyContent: "center",
-                    // alignItems: "center",
                     marginBottom: 25,
                     paddingRight: 15,
                     flex: 1,
                     borderWidth: 2,
                     borderRadius: 25,
                     paddingBottom: 15,
-                    // height: 50,
                     borderColor: item.bgColor,
                   }}
                 >
@@ -393,7 +332,7 @@ const DetailScreen = ({ route }: PropsWithChildren<IDetailScreenProps>) => {
                       lineHeight: 25,
                     }}
                   >
-                    {_}
+                    {instruction}
                   </Text>
                 </Animated.View>
               );

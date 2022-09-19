@@ -5,7 +5,6 @@ import { Home } from "../screens/Home";
 
 import { createSharedElementStackNavigator } from "react-navigation-shared-element";
 import { DetailScreen } from "../screens/Detail";
-import { TransitionSpecs } from "@react-navigation/stack";
 
 const Stack = createSharedElementStackNavigator();
 
@@ -39,10 +38,8 @@ const Navigation = ({}) => {
               },
               {
                 id: `item.${item.id}.text`,
-                // resize: "none",
-                resize: "clip",
+                // resize: "clip",
                 animation: "fade",
-                // animation: "fade",
               },
               {
                 id: `item.${item.id}.photo`,
