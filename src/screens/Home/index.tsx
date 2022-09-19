@@ -15,7 +15,9 @@ import Animated, {
   useAnimatedStyle,
   useDerivedValue,
   useSharedValue,
+  withDelay,
   withSpring,
+  WithSpringConfig,
 } from "react-native-reanimated";
 import { RECIPES } from "../../utils";
 import { SharedElement } from "react-navigation-shared-element";
@@ -31,6 +33,21 @@ const useLazyRef = <T extends object>(initializer: () => T) => {
     ref.current = initializer();
   }
   return ref.current;
+};
+
+export const transformOrigin = (
+  { x, y }: Vector,
+  transformations: RNTransform
+): RNTransform => {
+  "worklet";
+  return ([{ translateX: x }, { translateY: y }] as RNTransform)
+    .concat(transformations)
+    .concat([{ translateX: -x }, { translateY: -y }]);
+};
+
+const getTranslateZ = (perspective, z) => {
+  "worklet";
+  return perspective / (perspective - z);
 };
 
 const Home = ({ navigation }: PropsWithChildren<IHomeProps>) => {
@@ -148,16 +165,16 @@ const RecipeCard = ({
 
   const textColor = getContrast(item.bgColor);
   const CARD_WIDTH = width * 0.9;
-  // const extraOffset = 50;
+
   const isDisappearing = -CARD_HEIGHT - paddingTop;
   const isTop = 0 - paddingTop;
   const isBottom = height - CARD_HEIGHT - paddingTop;
   const isAppearing = height - paddingTop;
 
   const rotateX = useSharedValue(0);
+  const scale = useSharedValue(1);
   const imageRotateY = useSharedValue(0);
   const imageTranslateX = useSharedValue(0);
-  const perspective = useSharedValue(500);
 
   useAnimatedReaction(
     () => {
@@ -173,22 +190,31 @@ const RecipeCard = ({
       return p;
     },
     (result, previous) => {
+      const config: WithSpringConfig = {
+        damping: 15,
+        mass: 1.2,
+        stiffness: 80,
+      };
+
       if (Math.abs(result) >= 0.7 && Math.abs(result) <= 1) {
-        rotateX.value = withSpring(0);
-        imageRotateY.value = withSpring(0);
-        imageTranslateX.value = withSpring(0);
+        rotateX.value = withSpring(0, config);
+        imageRotateY.value = withDelay(75, withSpring(0));
+        imageTranslateX.value = withDelay(75, withSpring(0));
+        scale.value = withSpring(1, config);
       }
 
       if (result === -1) {
         rotateX.value = 70;
         imageRotateY.value = 45;
         imageTranslateX.value = 100;
+        scale.value = getTranslateZ(CARD_HEIGHT, -200);
       }
 
       if (result === 1) {
         rotateX.value = -70;
         imageRotateY.value = 45;
         imageTranslateX.value = 100;
+        scale.value = getTranslateZ(CARD_HEIGHT, -100);
       }
     }
   ),
@@ -196,74 +222,59 @@ const RecipeCard = ({
   const animatedStyle = useAnimatedStyle(() => {
     const position = index * CARD_HEIGHT - y.value;
 
-    const a =
-      y.value +
-      interpolate(
-        y.value,
-        [0, 0.00001 + index * CARD_HEIGHT],
-        [0, -index * CARD_HEIGHT],
-        Extrapolate.CLAMP
-      );
+    // const a =
+    //   y.value +
+    //   interpolate(
+    //     y.value,
+    //     [0, 0.00001 + index * CARD_HEIGHT],
+    //     [0, -index * CARD_HEIGHT],
+    //     Extrapolate.CLAMP
+    //   );
 
-    const b = interpolate(
-      position,
-      [isBottom, isAppearing],
-      [0, -CARD_HEIGHT / 4],
-      Extrapolate.CLAMP
-    );
-
-    const translateY = a + b;
-
-    const scale = interpolate(
-      position,
-      [isDisappearing, isTop, isBottom, isAppearing],
-      [0.5, 1, 1, 0.5],
-      Extrapolate.CLAMP
-    );
-
-    const opacity = interpolate(
-      position,
-      [isDisappearing, isTop, isBottom, isAppearing],
-      [0.5, 1, 1, 0.5]
-    );
-
-    // const rotateX = interpolate(
+    // const b = interpolate(
     //   position,
-    //   [isDisappearing, isTop, isBottom, isAppearing],
-    //   [90, 0, 0, -90],
+    //   [isBottom, isAppearing],
+    //   [0, -CARD_HEIGHT / 4],
     //   Extrapolate.CLAMP
     // );
 
+    // const translateY = a + b;
+
+    // const scale = interpolate(
+    //   position,
+    //   [isDisappearing, isTop, isBottom, isAppearing],
+    //   [0.5, 1, 1, 0.5],
+    //   Extrapolate.CLAMP
+    // );
+
+    // export const translateZ = (
+    //   perspective: Animated.Adaptable<number>,
+    //   z: Animated.Adaptable<number>
+    // ) => ({ scale: divide(perspective, sub(perspective, z)) });
+
+    const perspective = CARD_HEIGHT;
+
+    const offset = interpolate(
+      direction.value,
+      [-1, 0, 1],
+      [CARD_HEIGHT / 2, 0, -CARD_HEIGHT / 2]
+    );
+
     return {
-      // opacity,
       transform: [
-        { perspective: perspective.value },
-        // { translateX: CARD_WIDTH },
-        // { rotateX: `${rotateX}deg` },
-        // { translateX: -CARD_WIDTH },
+        { perspective: perspective },
+
+        // ...transformOrigin({ x: 0, y: offset }, [
+        //   { rotateX: `${rotateX.value}deg` },
+        // ]),
         { rotateX: `${rotateX.value}deg` },
-        // { translateY },
-        // { scale },
+        { scale: scale.value },
       ],
     };
   });
 
   const animatedImageStyle = useAnimatedStyle(() => {
     const position = index * CARD_HEIGHT - y.value;
-
-    const scale = interpolate(
-      position,
-      [isDisappearing, isTop, isBottom, isAppearing],
-      [0.8, 1, 1, 0.8],
-      Extrapolate.CLAMP
-    );
-
-    const rotateY = interpolate(
-      position,
-      [isDisappearing, isTop, isBottom, isAppearing],
-      [45, 0, 0, 45],
-      Extrapolate.CLAMP
-    );
 
     const rotate = interpolate(
       position,
@@ -272,23 +283,12 @@ const RecipeCard = ({
       Extrapolate.CLAMP
     );
 
-    const translateX = interpolate(
-      position,
-      [isDisappearing, isTop, isBottom, isAppearing],
-      [25, 0, 0, 25],
-      Extrapolate.CLAMP
-    );
-
     return {
       transform: [
-        { perspective: 1000 },
-        // { translateX: imageSize },
+        { perspective: imageSize },
         { rotateY: `${imageRotateY.value}deg` },
         { translateX: imageTranslateX.value },
-        // { translateX: -imageSize },
-        // { translateX },
         { rotate: `${rotate}deg` },
-        // { scale },
       ],
     };
   });
@@ -393,32 +393,6 @@ const RecipeCard = ({
             {item.description}
           </Text>
         </View>
-      </SharedElement>
-    </Animated.View>
-  );
-
-  return (
-    <Animated.View style={[animatedStyle]}>
-      <SharedElement
-        id={`item.${item.id}.card`}
-        style={{
-          height: CARD_HEIGHT_RAW,
-          width: CARD_WIDTH,
-          borderRadius: 18,
-          shadowOffset: {
-            height: 2,
-            width: 0,
-          },
-          shadowOpacity: 0.2,
-          shadowRadius: 4,
-          shadowColor: "#000000",
-          backgroundColor: item.bgColor,
-          // marginBottom: 30,
-          alignSelf: "center",
-          marginVertical: MARGIN,
-        }}
-      >
-        <Pressable onPress={onPress} style={{ flex: 1 }}></Pressable>
       </SharedElement>
     </Animated.View>
   );
