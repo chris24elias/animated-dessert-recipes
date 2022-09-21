@@ -219,85 +219,86 @@ const RecipeCard = ({
   });
 
   return (
-    <Animated.View style={[animatedStyle]}>
-      <SharedElement id={`item.${item.id}.card`}>
-        <Pressable
-          onPress={onPress}
-          style={{
-            height: CARD_HEIGHT_RAW,
-            width: CARD_WIDTH,
-            borderRadius: 18,
+    <Pressable onPress={onPress}>
+      <Animated.View style={[animatedStyle]}>
+        <SharedElement id={`item.${item.id}.card`}>
+          <View
+            style={{
+              height: CARD_HEIGHT_RAW,
+              width: CARD_WIDTH,
+              borderRadius: 18,
 
-            backgroundColor: item.bgColor,
+              backgroundColor: item.bgColor,
 
-            alignSelf: "center",
-            marginVertical: MARGIN,
-          }}
-        >
-          <View style={{ flexDirection: "row", flex: 1 }}>
-            <View
-              style={{ flex: 1, padding: 15, justifyContent: "flex-end" }}
-            ></View>
-            <View style={{ flex: 1 }}></View>
+              alignSelf: "center",
+              marginVertical: MARGIN,
+            }}
+          >
+            <View style={{ flexDirection: "row", flex: 1 }}>
+              <View
+                style={{ flex: 1, padding: 15, justifyContent: "flex-end" }}
+              ></View>
+              <View style={{ flex: 1 }}></View>
+            </View>
           </View>
-        </Pressable>
-      </SharedElement>
-      <SharedElement
-        id={`item.${item.id}.photo`}
-        style={{
-          height: imageSize,
-          width: imageSize,
-          position: "absolute",
-          zIndex: 100,
-          bottom: 0,
-          right: 0,
-        }}
-      >
-        <Animated.Image
-          source={item.image}
-          style={[
-            animatedImageStyle,
-            {
-              height: imageSize,
-              width: imageSize,
-            },
-          ]}
-        />
-      </SharedElement>
-      <SharedElement id={`item.${item.id}.text`}>
-        <View
+        </SharedElement>
+        <SharedElement
+          id={`item.${item.id}.photo`}
           style={{
-            height: CARD_HEIGHT * 0.5,
-            width: CARD_WIDTH * 0.6,
+            height: imageSize,
+            width: imageSize,
             position: "absolute",
-            left: (width - CARD_WIDTH) / 2 + 10,
-            zIndex: 5,
-            bottom: CARD_HEIGHT - CARD_HEIGHT * 0.5 - MARGIN * 2 - 30,
+            zIndex: 100,
+            bottom: 0,
+            right: 0,
           }}
         >
-          <Text
+          <Animated.Image
+            source={item.image}
+            style={[
+              animatedImageStyle,
+              {
+                height: imageSize,
+                width: imageSize,
+              },
+            ]}
+          />
+        </SharedElement>
+        <SharedElement id={`item.${item.id}.text`}>
+          <View
             style={{
-              fontSize: 24,
-              fontWeight: "600",
-              color: textColor,
+              height: CARD_HEIGHT * 0.5,
+              width: CARD_WIDTH * 0.6,
+              position: "absolute",
+              left: (width - CARD_WIDTH) / 2 + 10,
+              zIndex: 5,
+              bottom: CARD_HEIGHT - CARD_HEIGHT * 0.5 - MARGIN * 2 - 30,
             }}
           >
-            {item.title}
-          </Text>
-          <Text
-            numberOfLines={4}
-            style={{
-              fontSize: 15,
-              marginTop: 10,
-              color: textColor,
-              fontWeight: "300",
-            }}
-          >
-            {item.description}
-          </Text>
-        </View>
-      </SharedElement>
-    </Animated.View>
+            <Text
+              style={{
+                fontSize: 24,
+                fontWeight: "600",
+                color: textColor,
+              }}
+            >
+              {item.title}
+            </Text>
+            <Text
+              numberOfLines={4}
+              style={{
+                fontSize: 15,
+                marginTop: 10,
+                color: textColor,
+                fontWeight: "300",
+              }}
+            >
+              {item.description}
+            </Text>
+          </View>
+        </SharedElement>
+      </Animated.View>
+    </Pressable>
   );
 };
 
