@@ -34,17 +34,6 @@ export const images = {
   "15": require("../../assets/images/desserts/15-apple-pie.png"),
 };
 
-// from redash
-// export const transformOrigin = (
-//   { x, y }: Vector,
-//   transformations: RNTransform
-// ): RNTransform => {
-//   "worklet";
-//   return ([{ translateX: x }, { translateY: y }] as RNTransform)
-//     .concat(transformations)
-//     .concat([{ translateX: -x }, { translateY: -y }]);
-// };
-
 export const getTranslateZ = (perspective: number, z: number) => {
   "worklet";
   return perspective / (perspective - z);
